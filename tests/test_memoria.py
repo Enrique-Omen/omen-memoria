@@ -125,6 +125,15 @@ class TestVigentes(Base):
 
 
 class TestNuevo(Base):
+    def test_decision_nueva_no_se_repite(self):
+        m.escribir("decision", "Use SQLite", by="Laura", topic="db", agent="beto")
+        m.escribir("done", "Wrote tests", agent="beto")
+        out = m.nuevo("ana")
+        self.assertEqual(out.count("Use SQLite"), 1)
+        self.assertIn("- NEW ", out)
+        self.assertIn("New since your last session (2, 1 marked NEW above)", out)
+        self.assertIn("Wrote tests", out)
+
     def test_solo_de_otros_y_marca_avanza(self):
         m.escribir("done", "mine 1", agent="ana")
         m.escribir("done", "theirs 1", agent="beto")

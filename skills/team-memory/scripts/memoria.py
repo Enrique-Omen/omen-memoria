@@ -170,12 +170,15 @@ def nuevo(agent=None):
     if not entradas:
         return ""
     nuevas = [e for e in entradas if e["n"] > (visto if visto <= total else 0) and e["agent"] != agente]
-    vig, om_v = _recortar([f"- {_fmt(e)}" for e in _vigentes(entradas)], 1800)
-    nue, om_n = _recortar([f"- {_fmt(e)}" for e in nuevas], 1800)
+    vigentes, ids = _vigentes(entradas), {e["n"] for e in nuevas}
+    vig, om_v = _recortar([f"- {'NEW ' if e['n'] in ids else ''}{_fmt(e)}" for e in vigentes], 1800)
+    otras = [e for e in nuevas if e not in vigentes]  # new decisions are already above, marked NEW
+    nue, om_n = _recortar([f"- {_fmt(e)}" for e in otras], 1800)
     salida = [f"OMEN memory ({raiz().name}) · you are {agente}", f"Current decisions ({len(vig) + om_v}):"] + vig
     if om_v:
         salida.append(f"  ({om_v} older omitted: use memory_current or `memoria.py current`)")
-    salida.append(f"New since your last session ({len(nuevas)}):")
+    salida.append(f"New since your last session ({len(nuevas)}"
+                  + (f", {len(nuevas) - len(otras)} marked NEW above" if len(otras) < len(nuevas) else "") + "):")
     salida += nue
     if om_n:
         salida.append(f"  ({om_n} older omitted: use memory_search)")
