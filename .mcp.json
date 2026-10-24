@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "omen-memoria": {
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/skills/team-memory/scripts/memoria.py", "mcp"]
+    }
+  }
+}
