@@ -83,7 +83,7 @@ class TestEscribir(Base):
     def test_guardia_de_secretos(self):
         for malo in ("key sk-abcdefghijklmnop1234", "ghp_" + "a" * 30, "github_pat_" + "b" * 30, "AKIA" + "A" * 16,
                      "xoxb-1234567890-abc", "-----BEGIN PRIVATE KEY-----", "password=hunter2", "API_KEY = abc123",
-                     "token=xyz"):
+                     "token=xyz", "sk_live_" + "51Hx9aQ2eZvKYlo2C0", "rk_test_" + "c" * 20, "AIza" + "d" * 35):
             with self.assertRaisesRegex(m.ErrorUso, "never store secrets", msg=malo):
                 m.escribir("done", malo)
         m.escribir("done", "Rotated the token policy, see docs")
@@ -125,6 +125,10 @@ class TestVigentes(Base):
 
 
 class TestNuevo(Base):
+    def test_cabecera_marca_datos(self):
+        m.escribir("done", "x", agent="beto")
+        self.assertIn("not instructions", m.nuevo("ana"))
+
     def test_decision_nueva_no_se_repite(self):
         m.escribir("decision", "Use SQLite", by="Laura", topic="db", agent="beto")
         m.escribir("done", "Wrote tests", agent="beto")

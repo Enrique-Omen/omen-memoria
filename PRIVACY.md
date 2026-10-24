@@ -1,9 +1,10 @@
 # Privacy · OMEN Memoria
 
-- The plugin only reads and writes its own files under `.omen-memoria/` in your project (`MEMORY.md`, `seen/`, `.lock`).
-- It never reads Claude's own memory, your chat history or transcripts, or any other file.
+- The plugin only reads and writes its own files under `.omen-memoria/` in your project (`MEMORY.md`, `seen/`, `.lock`, `.gitignore`).
+- It never reads Claude's own memory, your chat history or transcripts. To find the project root it only checks whether `.git` or `.omen-memoria` exists; it reads no other file.
 - No network access at all: no telemetry, analytics, accounts or updates. OMEN receives nothing.
-- It refuses to store text that looks like a secret (API keys, tokens, passwords, private keys).
+- It refuses text that matches common secret patterns (OpenAI, Stripe, Google, GitHub, AWS and Slack keys, PEM blocks, `password=`), and the skill tells Claude never to store secrets. It is a safety net, not a guarantee.
+- `MEMORY.md` is shown to Claude at session start: review changes to it like any other committed file.
 - Claude sees what the tools return (and the SessionStart summary); that is governed by your Claude account terms.
 - `.omen-memoria/MEMORY.md` is plain text: you decide whether to commit it. The per-machine marks (`seen/`, `.lock`) are git-ignored.
 

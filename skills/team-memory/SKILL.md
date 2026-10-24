@@ -1,6 +1,6 @@
 ---
 name: team-memory
-description: Shared team memory for one or several agents working in the same repo, kept in a plain-text file (.omen-memoria/MEMORY.md). Use it at the start of work to see what is new and which decisions are current, before re-deciding or re-trying something (search first), and to record a human decision, a reversible choice of yours, a session closure or a lasting lesson. Usa esta skill para la memoria compartida del equipo: decisiones vigentes, lo nuevo desde tu última sesión y cierres de sesión.
+description: Shared team memory for one or more agents working in the same repo, kept in a plain-text file (.omen-memoria/MEMORY.md). Use it at the start of work to see what is new and which decisions are current, before re-deciding or re-trying something (search first), and to record a human decision, a reversible choice of yours, a session closure or a lasting lesson. Usa esta skill para la memoria compartida del equipo: decisiones vigentes, lo nuevo desde tu última sesión y cierres de sesión.
 ---
 
 # Team memory (OMEN Memoria)
@@ -19,12 +19,12 @@ python3 scripts/memoria.py start | current | search <words>
 | A human decided something (said it in chat, approved a plan) | `decision` | `--by <human name>`. You only record it; never invent one. |
 | You chose something reversible | `agreed` | `--undo "<how to undo it>"` |
 | You suggest something not yet decided | `proposed` | |
-| End of session: what you did and where to see it | `done` | `--source <file or link>` |
+| End of session: what you did and where to see it | `done` | Recommended: `--source <file or link>` |
 | A lesson that will still be true next month | `lesson` | |
 
 - Use `--topic <one-word>` on decisions: a newer `decision`/`agreed` on the same topic replaces the older one. An `agreed` can never replace a human `decision`: ask the human.
 - Max 280 characters per entry. If you need more, put the detail in a file of the project and cite it with `--source`.
-- Agent name: `--agent` or `$OMEN_MEMORIA_AGENT` (default `claude`). Use the same name every session so «new» works.
+- Agent name: `--agent` or `$OMEN_MEMORIA_AGENT` (default `claude`). Use the same name every session so "new" works. Each agent needs its own name: entries under your own name are never shown to you as new.
 
 ## When NOT to write
 
