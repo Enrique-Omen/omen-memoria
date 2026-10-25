@@ -35,7 +35,7 @@ Give each agent or person its own name (`export OMEN_MEMORIA_AGENT=ana` before l
 
 ```
 /plugin marketplace add Enrique-Omen/omen-memoria
-/plugin install omen-memoria@omen
+/plugin install omen-memoria@omen-memoria
 ```
 
 From a local copy: `claude --plugin-dir ./omen-memoria`. On Windows, `fcntl` is not available: use WSL or macOS/Linux.
