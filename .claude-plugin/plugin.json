@@ -1,7 +1,7 @@
 {
   "name": "omen-memoria",
   "version": "0.1.0",
-  "description": "Team memory for one or more agents in a repo: a plain-text file, a decision diary where the newest decision on a topic replaces the old one, and at session start only what is new plus the current decisions. / Memoria de equipo para uno o varios agentes en un repo.",
+  "description": "Shared team memory for several agents in one repo: a plain-text decision diary where the newest decision on a topic replaces the old one, and only what is new at session start.",
   "author": {
     "name": "OMEN",
     "email": "contacto@omen-it.tech",

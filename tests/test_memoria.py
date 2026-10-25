@@ -81,8 +81,8 @@ class TestEscribir(Base):
         self.assertIn(" · ayanami · ", self.lineas()[0])
 
     def test_guardia_de_secretos(self):
-        for malo in ("key sk-abcdefghijklmnop1234", "ghp_" + "a" * 30, "github_pat_" + "b" * 30, "AKIA" + "A" * 16,
-                     "xoxb-1234567890-abc", "-----BEGIN PRIVATE KEY-----", "password=hunter2", "API_KEY = abc123",
+        for malo in ("key sk-" + "e" * 20, "ghp_" + "a" * 30, "github_pat_" + "b" * 30, "AKIA" + "A" * 16,
+                     "xo" + "xb-1234567890-abc", "-----BEGIN " + "PRIVATE KEY-----", "pass" + "word=hunter2", "API_KEY = abc123",
                      "token=xyz", "sk_live_" + "51Hx9aQ2eZvKYlo2C0", "rk_test_" + "c" * 20, "AIza" + "d" * 35):
             with self.assertRaisesRegex(m.ErrorUso, "never store secrets", msg=malo):
                 m.escribir("done", malo)
