@@ -1,6 +1,6 @@
 ---
 name: team-memory
-description: Shared team memory for one or more agents working in the same repo, kept in a plain-text file (.omen-memoria/MEMORY.md). Use it at the start of work to see what is new and which decisions are current, before re-deciding or re-trying something (search first), and to record a human decision, a reversible choice of yours, a session closure or a lasting lesson. Usa esta skill para la memoria compartida del equipo: decisiones vigentes, lo nuevo desde tu última sesión y cierres de sesión.
+description: Shared team memory for one or more agents working in the same repo, kept in a plain-text file (.omen-memoria/MEMORY.md). Use it at the start of work to see what is new and which decisions are current, before re-deciding or re-trying something (search first), and to record a human decision, a reversible choice of yours, a session closure or a lasting lesson. Usa esta skill para la memoria compartida del equipo (decisiones vigentes, lo nuevo desde tu última sesión y cierres de sesión).
 ---
 
 # Team memory (OMEN Memoria)
