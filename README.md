@@ -1,6 +1,17 @@
 # OMEN Memoria
 
-Team memory for one or more agents in a repo, in one readable text file: `.omen-memoria/MEMORY.md`. A Claude Code plugin (MCP server + Agent Skill + SessionStart hook). Python 3 standard library only.
+Claude forgets what your team decided between sessions. OMEN Memoria keeps a short decision diary in your repo, so every agent starts knowing the current decisions and only what changed since it last looked.
+
+Install in Claude Code (macOS and Linux; on Windows, use WSL):
+
+```
+/plugin marketplace add Enrique-Omen/omen-memoria
+/plugin install omen-memoria@omen-memoria
+```
+
+Then try: "Laura decided we use PostgreSQL. Record it." Next session, any agent: "What has the team decided?"
+
+Everything stays in one readable file, `.omen-memoria/MEMORY.md`, inside your repo. No network.
 
 ## What makes it different
 
@@ -20,6 +31,8 @@ Types: `decision`, `agreed`, `proposed`, `done`, `lesson`. Max 280 characters; f
 
 ## Tools
 
+A Claude Code plugin: an MCP server, an Agent Skill and a SessionStart hook, in Python's standard library.
+
 | Tool | Use |
 |---|---|
 | `memory_write` | Record a decision, a reversible choice, a session closure or a lesson. |
@@ -31,14 +44,9 @@ The project root is `$OMEN_MEMORIA_DIR` if set, otherwise the current directory,
 
 Give each agent or person its own name (`export OMEN_MEMORIA_AGENT=ana` before launching `claude`): entries under your own name are never shown to you as new.
 
-## Install in Claude Code
+## From a local copy
 
-```
-/plugin marketplace add Enrique-Omen/omen-memoria
-/plugin install omen-memoria@omen-memoria
-```
-
-From a local copy: `claude --plugin-dir ./omen-memoria`. On Windows, `fcntl` is not available: use WSL or macOS/Linux.
+`claude --plugin-dir ./omen-memoria`. On Windows, `fcntl` is not available: use WSL or macOS/Linux.
 
 ## Command line
 

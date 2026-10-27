@@ -1,7 +1,7 @@
 {
   "name": "omen-memoria",
   "version": "0.1.0",
-  "description": "Shared team memory for several agents in one repo: a plain-text decision diary where the newest decision on a topic replaces the old one, and only what is new at session start.",
+  "description": "Your Claude agents remember what the team decided. One decision diary in your repo; each session starts with the current decisions and only what changed since you last looked.",
   "author": {
     "name": "OMEN",
     "email": "contacto@omen-it.tech",
