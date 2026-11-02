@@ -243,6 +243,73 @@ class TestCLIyMCP(Base):
         self.assertIn("(1)", resp[7]["result"]["content"][0]["text"])
 
 
+class TestElicitation(Base):
+    """A decision without `by`: the server asks the user (form elicitation) and waits for the answer."""
+    def setUp(self):
+        super().setUp()
+        self.p = subprocess.Popen([sys.executable, str(SCRIPT), "mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  text=True, cwd=self.tmp.name, env=dict(os.environ))
+        self.addCleanup(self.p.wait, 10)
+        self.addCleanup(self.p.stdin.close)
+        self.addCleanup(self.p.stdout.close)
+
+    def manda(self, msg):
+        self.p.stdin.write(json.dumps(msg) + "\n")
+        self.p.stdin.flush()
+
+    def lee(self):
+        return json.loads(self.p.stdout.readline())
+
+    def decision(self, caps, by=None):
+        self.manda({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": caps}})
+        self.lee()
+        self.manda({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "memory_write", "arguments": {
+            "type": "decision", "text": "Use Postgres", "by": by}}})
+        return self.lee()
+
+    def test_con_by_no_pregunta(self):
+        r = self.decision({"elicitation": {}}, by="Ana")
+        self.assertEqual(r["id"], 2)
+        self.assertFalse(r["result"]["isError"])
+
+    def test_sin_by_pregunta_y_escribe_lo_que_contesta(self):
+        pet = self.decision({"elicitation": {"form": {}}})
+        self.assertEqual((pet["method"], pet["params"]["mode"]), ("elicitation/create", "form"))
+        self.assertIn("Use Postgres", pet["params"]["message"])
+        self.manda({"jsonrpc": "2.0", "id": 9, "method": "ping"})  # the client may ping while the form is open
+        self.manda({"jsonrpc": "2.0", "id": pet["id"], "result": {"action": "accept", "content": {"by": " Ana "}}})
+        self.assertEqual(self.lee(), {"jsonrpc": "2.0", "id": 9, "result": {}})
+        r = self.lee()
+        self.assertFalse(r["result"]["isError"])
+        self.assertIn("the user typed 'Ana' in the form", r["result"]["content"][0]["text"])
+        self.assertTrue(self.lineas()[-1].endswith("decision · Use Postgres (by Ana)"))
+
+    def test_si_el_cliente_cancela_la_llamada_no_se_queda_esperando(self):
+        pet = self.decision({"elicitation": {}})
+        self.manda({"jsonrpc": "2.0", "id": "x", "result": {}})  # stray response: no answer
+        self.manda({"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 2}})
+        self.assertEqual(self.lee()["id"], 2)
+        self.manda({"jsonrpc": "2.0", "id": pet["id"], "result": {"action": "cancel"}})  # late: no answer either
+        self.manda({"jsonrpc": "2.0", "id": 5, "method": "ping"})
+        self.assertEqual(self.lee()["id"], 5)
+
+    def test_cancel_o_sin_soporte_deja_el_error_de_siempre(self):
+        pet = self.decision({"elicitation": {}})
+        self.manda({"jsonrpc": "2.0", "id": pet["id"], "result": {"action": "cancel"}})
+        r = self.lee()
+        self.assertTrue(r["result"]["isError"])
+        self.assertIn("--by", r["result"]["content"][0]["text"])
+        self.manda({"jsonrpc": "2.0", "id": 3, "method": "initialize", "params": {"capabilities": {
+            "elicitation": {"url": {}}}}})  # url-only client: no form, no question
+        self.lee()
+        self.manda({"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "memory_write",
+                    "arguments": {"type": "decision", "text": "Use Redis"}}})
+        r = self.lee()
+        self.assertEqual(r["id"], 4)
+        self.assertTrue(r["result"]["isError"])
+        self.assertFalse(self.mem.exists())
+
+
 class TestPlugin(unittest.TestCase):
     def test_hooks_y_mcp_apuntan_al_script(self):
         raiz = SCRIPT.parents[3]

@@ -6,6 +6,7 @@ its own files under .omen-memoria/ of the project.
   memoria.py write|start|search|current|mcp
 """
 import argparse
+import itertools
 import json
 import os
 import re
@@ -19,7 +20,7 @@ try:
 except ImportError:  # Windows
     fcntl = None
 
-NOMBRE, VERSION = "omen-memoria", "0.1.0"
+NOMBRE, VERSION = "omen-memoria", "0.2.0"
 TIPOS = ("decision", "agreed", "proposed", "done", "lesson")
 MAX_TEXTO, MAX_EXTRA, MAX_SALIDA = 280, 100, 4000
 NO_HUMANOS = {"claude", "assistant", "ai", "agent", "bot", "gpt", "codex"}
@@ -219,7 +220,8 @@ HERRAMIENTAS = {
         {"type": {"type": "string", "enum": list(TIPOS), "description": "Entry type."},
          "text": _S("The entry, max 280 characters."), "source": _S("Optional file or link with the detail."),
          "topic": _S("Optional topic, one word; same topic = replaces the older decision."),
-         "by": _S("Human who decided (required for decision)."), "undo": _S("How to undo it (required for agreed)."),
+         "by": _S("Human who decided (required for decision). Never guess it: leave it empty and, if the "
+                   "client supports forms, the user is asked."), "undo": _S("How to undo it (required for agreed)."),
          "agent": _AG}, ["type", "text"]),
     "memory_search": (buscar,
         "Search the team memory (accent- and case-insensitive, all words must match). Use before starting work on "
@@ -235,6 +237,54 @@ HERRAMIENTAS = {
 
 
 # ---------------------------------------------------------------- MCP stdio
+_CAPS = {}  # client capabilities from initialize
+_PENDIENTES = []  # lines that arrived while waiting for the client
+_SEQ = itertools.count(1)
+
+
+def _enviar(msg):
+    sys.stdout.write(json.dumps(msg, ensure_ascii=False) + "\n")
+    sys.stdout.flush()
+
+
+def pedir_al_cliente(metodo, params, para=None):
+    """Server -> client request. Returns its `result`, or None on error, closed stdin or when the client cancels
+    request `para`. While waiting: answers ping and queues anything else for the main loop."""
+    rid = f"omen-{next(_SEQ)}"
+    _enviar({"jsonrpc": "2.0", "id": rid, "method": metodo, "params": params})
+    while linea := sys.stdin.buffer.readline():
+        try:
+            msg = json.loads(linea)
+        except ValueError:
+            msg = None
+        if isinstance(msg, dict) and msg.get("id") == rid and "method" not in msg:
+            return None if "error" in msg else msg.get("result")
+        if para is not None and isinstance(msg, dict) and msg.get("method") == "notifications/cancelled" and \
+                (msg.get("params") or {}).get("requestId") == para:
+            return None
+        if isinstance(msg, dict) and msg.get("method") == "ping" and "id" in msg:
+            _enviar({"jsonrpc": "2.0", "id": msg["id"], "result": {}})
+        elif linea.strip():
+            _PENDIENTES.append(linea)
+    _PENDIENTES.append(b"")  # stdin closed: the main loop ends after the queue
+    return None
+
+
+def _preguntar_quien(text, para=None):
+    """Ask the user (form elicitation) which human made the decision. None if unsupported or no answer."""
+    e = _CAPS.get("elicitation")
+    if not (isinstance(e, dict) and (not e or "form" in e)):
+        return None
+    r = pedir_al_cliente("elicitation/create", {
+        "mode": "form", "message": f"Who made this decision?\n\n{text[:MAX_TEXTO]}\n\nThe team memory records a decision "
+                                   "only with the name of the human who made it. Cancel if no one decided it yet.",
+        "requestedSchema": {"type": "object", "required": ["by"], "properties": {
+            "by": {"type": "string", "title": "Decided by", "maxLength": MAX_EXTRA,
+                   "description": "A person's name, e.g. Ana."}}}}, para) or {}
+    by = (r.get("content") or {}).get("by")
+    return by.strip() if r.get("action") == "accept" and isinstance(by, str) and by.strip() else None
+
+
 def _herramientas_mcp():
     return [{"name": n, "title": n.replace("_", " ").title(), "description": d,
              "inputSchema": {"type": "object", "properties": p, "required": r},
@@ -248,8 +298,8 @@ def manejar(msg):
     if not isinstance(msg, dict):
         return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid Request"}}
     metodo, mid, params = msg.get("method"), msg.get("id"), msg.get("params") or {}
-    if "id" not in msg:
-        return None
+    if "id" not in msg or "method" not in msg and ("result" in msg or "error" in msg):
+        return None  # notifications and stray responses get no answer
 
     def ok(resultado):
         return {"jsonrpc": "2.0", "id": mid, "result": resultado}
@@ -258,6 +308,8 @@ def manejar(msg):
         return {"jsonrpc": "2.0", "id": mid, "error": {"code": codigo, "message": mensaje}}
 
     if metodo == "initialize":
+        global _CAPS
+        _CAPS = params.get("capabilities") or {}
         return ok({"protocolVersion": params.get("protocolVersion") or "2025-06-18",
                    "capabilities": {"tools": {}},
                    "serverInfo": {"name": NOMBRE, "version": VERSION},
@@ -273,8 +325,14 @@ def manejar(msg):
             return err(-32602, f"Unknown tool: {nombre}")
         fn, _, props, _ = HERRAMIENTAS[nombre]
         args = {k: v for k, v in (params.get("arguments") or {}).items() if k in props and v not in (None, "")}
+        nota = ""
+        if nombre == "memory_write" and args.get("type") == "decision" and not args.get("by"):
+            args["by"] = _preguntar_quien(str(args.get("text", "")), mid)
+            if args["by"]:
+                nota = (f"\n(by: the user typed {args['by']!r} in the form your MCP client showed; you did not "
+                        "pick it, and it does not appear in the chat)")
         try:
-            texto, es_error = fn(**args) or "(empty)", False
+            texto, es_error = (fn(**args) or "(empty)") + nota, False
         except ErrorUso as e:
             texto, es_error = f"Error: {e}", True
         except Exception as e:  # noqa: BLE001 - reported to the client, never kills the server
@@ -284,7 +342,7 @@ def manejar(msg):
 
 
 def servir_mcp():
-    for linea in sys.stdin.buffer:
+    while linea := _PENDIENTES.pop(0) if _PENDIENTES else sys.stdin.buffer.readline():
         linea = linea.strip()
         if not linea:
             continue
@@ -293,8 +351,7 @@ def servir_mcp():
         except json.JSONDecodeError:
             resp = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}}
         if resp is not None:
-            sys.stdout.write(json.dumps(resp, ensure_ascii=False) + "\n")
-            sys.stdout.flush()
+            _enviar(resp)
 
 
 # ---------------------------------------------------------------- CLI

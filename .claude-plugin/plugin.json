@@ -1,6 +1,6 @@
 {
   "name": "omen-memoria",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Your Claude agents remember what the team decided. One decision diary in your repo; each session starts with the current decisions and only what changed since you last looked.",
   "author": {
     "name": "OMEN",
