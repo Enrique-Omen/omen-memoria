@@ -15,7 +15,7 @@ Everything stays in one readable file, `.omen-memoria/MEMORY.md`, inside your re
 
 ## What makes it different
 
-1. **A decision diary as its own entry type.** `decision` (made by a human, needs `--by`), `agreed` (your reversible choice, needs `--undo`). A newer entry on the same `topic` replaces the old one; an `agreed` can never replace a human `decision`.
+1. **A decision diary as its own entry type.** `decision` (made by a human, needs `--by`), `agreed` (your reversible choice, needs `--undo`). A newer entry on the same `topic` replaces the old one; an `agreed` can never replace a human `decision`. If Claude records a `decision` without saying who made it, the plugin asks you in a one-field form (Claude Code shows it); if you cancel, nothing is written.
 2. **Only what is new.** At session start each agent sees the current decisions plus just what OTHER agents wrote since its own last session (never more than ~4 KB).
 3. **Several agents, one memory.** Writes are serialized with a file lock (`fcntl.flock`); two agents writing at once never corrupt the file.
 
@@ -87,7 +87,7 @@ Only reads and writes its own files in `.omen-memoria/` of your repo. Never read
 
 ## En español
 
-Memoria de equipo para uno o varios agentes en un repo, en un archivo de texto legible (`.omen-memoria/MEMORY.md`). Lo que la distingue: el diario de decisiones (la nueva del mismo tema reemplaza a la vieja; una decisión de un humano la anota el agente con `--by`), al arrancar cada agente ve solo lo nuevo desde su última sesión más las decisiones vigentes, y varios agentes comparten la misma memoria con candado. Solo toca `.omen-memoria/` de tu repo, sin red ni lectura de tu historial. Solo macOS/Linux.
+Memoria de equipo para uno o varios agentes en un repo, en un archivo de texto legible (`.omen-memoria/MEMORY.md`). Lo que la distingue: el diario de decisiones (la nueva del mismo tema reemplaza a la vieja; una decisión de un humano la anota el agente con `--by`, y si no sabe quién la tomó te lo pregunta en un formulario), al arrancar cada agente ve solo lo nuevo desde su última sesión más las decisiones vigentes, y varios agentes comparten la misma memoria con candado. Solo toca `.omen-memoria/` de tu repo, sin red ni lectura de tu historial. Solo macOS/Linux.
 
 ---
 
